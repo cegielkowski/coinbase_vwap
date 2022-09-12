@@ -5,6 +5,7 @@ import (
 	"coinbase_vwap/utils"
 	"github.com/gorilla/websocket"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -62,7 +63,11 @@ func (s *socketClient) subscribeMatches(productIds []string) error {
 }
 
 func (s *socketClient) messageListener(matchesChan chan<- domain.MatchesResponse, errChan chan<- error) {
-	var matchesResponse domain.MatchesResponse
+	var pool = sync.Pool{
+		New: func() interface{} {
+			return &domain.MatchesResponse{}
+		},
+	}
 	failedToReadJsonCount := 0
 	failedToConnect := 0
 
@@ -79,7 +84,12 @@ func (s *socketClient) messageListener(matchesChan chan<- domain.MatchesResponse
 				failedToConnect += 1
 			}
 		}
-		err = utils.ReadJson(msg, &matchesResponse)
+		if msg == nil {
+			continue
+		}
+
+		matchesResponse := pool.New().(*domain.MatchesResponse)
+		err = utils.ReadJson(msg, matchesResponse)
 		if err != nil {
 			failedToReadJsonCount += 1
 			if failedToReadJsonCount >= 3 {
@@ -92,7 +102,7 @@ func (s *socketClient) messageListener(matchesChan chan<- domain.MatchesResponse
 			continue
 		}
 
-		matchesChan <- matchesResponse
+		matchesChan <- *matchesResponse
 	}
 
 }

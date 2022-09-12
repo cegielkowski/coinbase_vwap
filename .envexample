@@ -1,0 +1,3 @@
+WEB_SERVICE_ADDRESS=wss://ws-feed.exchange.coinbase.com
+VALUE_LIMIT_SIZE=200
+PRODUCT_IDS=BTC-USD,ETH-USD,ETH-BTC
